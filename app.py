@@ -196,7 +196,7 @@ def control_file(file_id, action):
         
         try:
             if filetype == 'py':
-                process = subprocess.Popen(['python', filepath], 
+                process = subprocess.Popen(['python3', filepath], 
                                          stdout=subprocess.PIPE,
                                          stderr=subprocess.STDOUT,
                                          text=True)
