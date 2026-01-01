@@ -325,6 +325,104 @@ def get_logs(file_id):
     
     return jsonify(process_logs[file_id][-100:])  # Return last 100 lines
 
+@app.route('/edit/<int:file_id>')
+def edit_file(file_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('bot_data.db')
+    c = conn.cursor()
+    c.execute('SELECT filename FROM files WHERE id = ? AND user_id = ?', (file_id, session['user_id']))
+    file = c.fetchone()
+    conn.close()
+    
+    if not file:
+        flash('File not found', 'error')
+        return redirect(url_for('index'))
+    
+    filename = file[0]
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(session['user_id']))
+    filepath = os.path.join(user_folder, filename)
+    
+    content = ""
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as f:
+            content = f.read()
+            
+    return render_template('edit.html', file_id=file_id, filename=filename, content=content)
+
+@app.route('/save/<int:file_id>', methods=['POST'])
+def save_file(file_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    content = request.form.get('content')
+    
+    conn = sqlite3.connect('bot_data.db')
+    c = conn.cursor()
+    c.execute('SELECT filename FROM files WHERE id = ? AND user_id = ?', (file_id, session['user_id']))
+    file = c.fetchone()
+    conn.close()
+    
+    if not file:
+        flash('File not found', 'error')
+        return redirect(url_for('index'))
+    
+    filename = file[0]
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(session['user_id']))
+    filepath = os.path.join(user_folder, filename)
+    
+    with open(filepath, 'w') as f:
+        f.write(content)
+        
+    flash('File saved successfully', 'success')
+    return redirect(url_for('index'))
+
+@app.route('/create', methods=['POST'])
+def create_file():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    filename = request.form.get('filename')
+    if not filename:
+        flash('Filename is required', 'error')
+        return redirect(url_for('index'))
+    
+    if not allowed_file(filename):
+        flash('Invalid file type. Only .py and .js are allowed', 'error')
+        return redirect(url_for('index'))
+    
+    filename = secure_filename(filename)
+    filetype = filename.rsplit('.', 1)[1].lower()
+    
+    conn = sqlite3.connect('bot_data.db')
+    c = conn.cursor()
+    c.execute('SELECT COUNT(*) FROM files WHERE user_id = ?', (session['user_id'],))
+    if c.fetchone()[0] >= 5:
+        conn.close()
+        flash('You can only have up to 5 files', 'error')
+        return redirect(url_for('index'))
+    
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(session['user_id']))
+    os.makedirs(user_folder, exist_ok=True)
+    filepath = os.path.join(user_folder, filename)
+    
+    if os.path.exists(filepath):
+        conn.close()
+        flash('File already exists', 'error')
+        return redirect(url_for('index'))
+    
+    with open(filepath, 'w') as f:
+        f.write("# New file created via editor")
+        
+    c.execute('INSERT INTO files (user_id, filename, filetype, upload_date) VALUES (?, ?, ?, ?)',
+              (session['user_id'], filename, filetype, datetime.now().isoformat()))
+    conn.commit()
+    conn.close()
+    
+    flash('File created successfully', 'success')
+    return redirect(url_for('index'))
+
 @app.route('/delete/<int:file_id>', methods=['POST'])
 def delete_file(file_id):
     if 'user_id' not in session:

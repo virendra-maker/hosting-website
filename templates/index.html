@@ -9,20 +9,42 @@
         <p>You can upload up to 5 files (Python/JS scripts)</p>
     </div>
 
-    <div class="upload-section" style="text-align: center; margin-top: 20px;">
-        <form action="/upload" method="post" enctype="multipart/form-data">
+    <div class="upload-section" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 20px;">
+        <!-- Upload Form -->
+        <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form" style="flex: 1; min-width: 250px;">
             <div class="form-group" style="display: flex; flex-direction: column; align-items: center;">
-                <label for="file-upload" class="file-upload-label" style="cursor: pointer; color: white;">
+                <label for="file-upload" class="file-upload-label" style="cursor: pointer; color: white; border: 1px dashed #fff; padding: 15px; border-radius: 8px; width: 100%;">
                     <i class="fas fa-cloud-upload-alt"></i>
-                    <span>Choose File (.py, .js, .zip)</span>
-                    <input type="file" name="file" id="file-upload" required style="display: none;">
+                    <span id="file-name-display">Choose File (.py, .js, .zip)</span>
+                    <input type="file" name="file" id="file-upload" required style="display: none;" onchange="updateFileName()">
                 </label>
-                <button type="submit" class="action-btn" style="margin-top: 10px;">
+                <button type="submit" class="action-btn" style="margin-top: 10px; width: 100%;">
                     <i class="fas fa-upload"></i> Upload
                 </button>
             </div>
         </form>
+
+        <!-- Create File Form -->
+        <form action="/create" method="post" style="flex: 1; min-width: 250px;">
+            <div class="form-group" style="display: flex; flex-direction: column; align-items: center;">
+                <input type="text" name="filename" placeholder="filename.py or .js" required style="width: 100%; padding: 15px; border-radius: 8px; background: #2a2a2a; color: white; border: 1px solid #ccc; margin-bottom: 10px;">
+                <button type="submit" class="action-btn" style="width: 100%;">
+                    <i class="fas fa-plus"></i> Create File
+                </button>
+            </div>
+        </form>
     </div>
+    <script>
+        function updateFileName() {
+            const input = document.getElementById('file-upload');
+            const display = document.getElementById('file-name-display');
+            if (input.files && input.files.length > 0) {
+                display.textContent = input.files[0].name;
+            } else {
+                display.textContent = 'Choose File (.py, .js, .zip)';
+            }
+        }
+    </script>
 </div>
 
 <!-- File List Section -->
@@ -58,6 +80,11 @@
                         <!-- Start button -->
                         <a href="/control/{{ file.id }}/start" class="action-btn">
                             <i class="fas fa-play"></i> Start
+                        </a>
+
+                        <!-- Edit button -->
+                        <a href="/edit/{{ file.id }}" class="action-btn">
+                            <i class="fas fa-edit"></i> Edit Code
                         </a>
 
                         <!-- Logs button -->
@@ -118,8 +145,9 @@
 
     .action-btn {
         display: inline-block;
-        width: 160px;
-        padding: 10px 0;
+        width: 100%;
+        max-width: 160px;
+        padding: 12px 0;
         text-align: center;
         font-size: 14px;
         border: 1px solid #ffffff;
@@ -129,6 +157,18 @@
         color: white;
         transition: all 0.3s ease;
         box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+    
+    @media (max-width: 600px) {
+        .action-btn {
+            max-width: 100%;
+        }
+        .files-grid {
+            grid-template-columns: 1fr !important;
+        }
+        .upload-section {
+            flex-direction: column;
+        }
     }
 
     .action-btn:hover {
