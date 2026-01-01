@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="border: 2px solid #ccc; border-radius: 10px; padding: 20px; margin: 20px auto; max-width: 1000px; background-color: #1c1c1c;">
+    <h2 style="color: #00ffff;">Admin Dashboard - All User Files</h2>
+    
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; color: white;">
+            <thead>
+                <tr style="border-bottom: 2px solid #444;">
+                    <th style="padding: 10px; text-align: left;">User</th>
+                    <th style="padding: 10px; text-align: left;">Filename</th>
+                    <th style="padding: 10px; text-align: left;">Type</th>
+                    <th style="padding: 10px; text-align: center;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user, file_id, filename, filetype, user_id in files %}
+                <tr style="border-bottom: 1px solid #333;">
+                    <td style="padding: 10px;">{{ user }}</td>
+                    <td style="padding: 10px;">{{ filename }}</td>
+                    <td style="padding: 10px;">{{ filetype|upper }}</td>
+                    <td style="padding: 10px; text-align: center;">
+                        <a href="/admin/view/{{ user_id }}/{{ filename }}" class="action-btn" style="width: 100px; padding: 5px 0;">
+                            <i class="fas fa-eye"></i> View Code
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .action-btn {
+        display: inline-block;
+        text-align: center;
+        font-size: 14px;
+        border: 1px solid #ffffff;
+        border-radius: 5px;
+        background-color: transparent;
+        text-decoration: none;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+    }
+    .action-btn:hover {
+        background-color: white;
+        color: #000;
+        box-shadow: 0 0 15px white;
+    }
+</style>
+{% endblock %}

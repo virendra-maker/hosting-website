@@ -7,7 +7,11 @@ import sqlite3
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here_akiru_team_2023'  # Change this to a strong secret key
+app.secret_key = 'your_secret_key_here_akiru_team_2023'
+ADMIN_CREDENTIALS = {
+    'username': 'rajan',
+    'password': 'virendrasinh'
+}
 app.config['UPLOAD_FOLDER'] = 'user_bots'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
@@ -76,6 +80,13 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
+        # Check Admin first
+        if username == ADMIN_CREDENTIALS['username'] and password == ADMIN_CREDENTIALS['password']:
+            session['user_id'] = 'admin'
+            session['username'] = username
+            session['is_admin'] = True
+            return redirect(url_for('admin_dashboard'))
+        
         conn = sqlite3.connect('bot_data.db')
         c = conn.cursor()
         c.execute('SELECT id FROM users WHERE username = ? AND password = ?', (username, password))
@@ -85,11 +96,43 @@ def login():
         if user:
             session['user_id'] = user[0]
             session['username'] = username
+            session['is_admin'] = False
             return redirect(url_for('index'))
         else:
             flash('Invalid credentials', 'error')
     
     return render_template('login.html')
+
+@app.route('/admin')
+def admin_dashboard():
+    if not session.get('is_admin'):
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('bot_data.db')
+    c = conn.cursor()
+    c.execute('''SELECT users.username, files.id, files.filename, files.filetype, files.user_id 
+                 FROM files 
+                 JOIN users ON files.user_id = users.id''')
+    all_files = c.fetchall()
+    conn.close()
+    
+    return render_template('admin.html', files=all_files)
+
+@app.route('/admin/view/<int:user_id>/<filename>')
+def admin_view_file(user_id, filename):
+    if not session.get('is_admin'):
+        return redirect(url_for('login'))
+    
+    user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(user_id))
+    filepath = os.path.join(user_folder, filename)
+    
+    if os.path.exists(filepath):
+        with open(filepath, 'r') as f:
+            content = f.read()
+        return render_template('view_code.html', filename=filename, content=content)
+    else:
+        flash('File not found', 'error')
+        return redirect(url_for('admin_dashboard'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
